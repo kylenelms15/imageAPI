@@ -18,4 +18,16 @@ public class ImageController {
 
         return ResponseEntity.ok(imageService.submitImage(request));
     }
+
+    @GetMapping(path = "/images")
+    public @ResponseBody ResponseEntity getImages() {
+
+        return ResponseEntity.ok(imageService.getAllImages());
+    }
+
+    @GetMapping(path="/images/{imageID}")
+    public @ResponseBody ResponseEntity getImage(@PathVariable Integer imageID) {
+
+        return ResponseEntity.ok(imageService.getImage(imageID));
+    }
 }

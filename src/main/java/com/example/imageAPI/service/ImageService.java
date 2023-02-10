@@ -10,8 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.Base64;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +23,7 @@ public class ImageService {
         ImageDTO imageDTO = convertToDTO(request);
         imageRepository.save(imageDTO);
 
-        return convertToResponseObject(imageDTO, request.getImage());
+        return convertDTOtoResponse(imageDTO);
     }
 
     private ImageDTO convertToDTO(RequestObject request) {
@@ -57,10 +56,14 @@ public class ImageService {
         return imageDTO;
     }
 
-    private ResponseObject convertToResponseObject(ImageDTO imageDTO, String encodedImage) {
+    private ResponseObject convertDTOtoResponse(ImageDTO imageDTO) {
         ResponseObject responseObject = new ResponseObject();
 
-        responseObject.setImageData(encodedImage);
+        if(imageDTO.getImageData() != null ) {
+            String imageData = new String(Base64.getEncoder().encode(imageDTO.getImageData()));
+            responseObject.setImageData(imageData);
+        }
+
         responseObject.setObjects(imageDTO.getObjects());
         responseObject.setLabel(imageDTO.getLabel());
         responseObject.setId(imageDTO.getImageID());
@@ -71,5 +74,27 @@ public class ImageService {
 
     private String generateLabel() {
         return UUID.randomUUID().toString();
+    }
+
+    public List<ResponseObject> getAllImages() {
+        List<ImageDTO> imageDTOS = imageRepository.findAll();
+        List<ResponseObject> responseObjects = new ArrayList<>();
+
+        imageDTOS.stream().forEach(imageDTO -> {
+            responseObjects.add(convertDTOtoResponse(imageDTO));
+
+        });
+
+        return responseObjects;
+    }
+
+    public ResponseObject getImage(Integer imageID) {
+        Optional<ImageDTO> imageDTO = imageRepository.findById(imageID);
+
+        if(imageDTO.isPresent()) {
+            return convertDTOtoResponse(imageDTO.get());
+        }
+
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found");
     }
 }
