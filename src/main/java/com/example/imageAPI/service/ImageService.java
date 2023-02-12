@@ -1,5 +1,6 @@
 package com.example.imageAPI.service;
 
+import com.example.imageAPI.Google.DetectLabels;
 import com.example.imageAPI.model.ImageDTO;
 import com.example.imageAPI.model.RequestObject;
 import com.example.imageAPI.model.ResponseObject;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.util.*;
 
 @Service
@@ -18,6 +20,8 @@ public class ImageService {
 
 
     private final ImageRepository imageRepository;
+
+    private final DetectLabels detectLabels;
 
     public ResponseObject submitImage(RequestObject request) {
         ImageDTO imageDTO = convertToDTO(request);
@@ -45,12 +49,22 @@ public class ImageService {
             imageDTO.setImageURI(request.getImageURI());
         }
 
-        if(imageDTO.getImageURI().isEmpty() && imageDTO.getImageData().length<=0) {
+        if(StringUtils.isEmpty(imageDTO.getImageURI()) && imageDTO.getImageData().length<=0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image or Imamage URI must be provided");
         }
 
         if(request.isDetectionEnabled()) {
             //code for object detection
+            try {
+                if (imageDTO.getImageData() != null){
+                    imageDTO.setObjects(detectLabels.detectLabelsFromBytes(imageDTO.getImageData()));
+                } else {
+                    imageDTO.setObjects(detectLabels.detectLabelsFromURI(imageDTO.getImageURI()));
+                }
+
+            } catch (IOException e) {
+                //something latyer
+            }
         }
 
         return imageDTO;
