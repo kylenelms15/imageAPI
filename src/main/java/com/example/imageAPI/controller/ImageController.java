@@ -3,8 +3,11 @@ package com.example.imageAPI.controller;
 import com.example.imageAPI.model.RequestObject;
 import com.example.imageAPI.service.ImageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,5 +32,11 @@ public class ImageController {
     public @ResponseBody ResponseEntity getImage(@PathVariable Integer imageID) {
 
         return ResponseEntity.ok(imageService.getImage(imageID));
+    }
+
+    @GetMapping(path="/images/")
+    public @ResponseBody ResponseEntity getImagesByObjects(@RequestParam List<String> objects) {
+
+        return ResponseEntity.ok(imageService.getImageByObjects(objects));
     }
 }

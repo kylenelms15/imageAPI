@@ -42,7 +42,6 @@ public class ImageService {
         if(!StringUtils.isEmpty(request.getImage())) {
             byte[] decodedImageData = Base64.getDecoder().decode(request.getImage());
             imageDTO.setImageData(decodedImageData);
-            //throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image not found.");
         }
 
         if(request.getImageURI() != null && !request.getImageURI().isEmpty()) {
@@ -92,14 +91,8 @@ public class ImageService {
 
     public List<ResponseObject> getAllImages() {
         List<ImageDTO> imageDTOS = imageRepository.findAll();
-        List<ResponseObject> responseObjects = new ArrayList<>();
 
-        imageDTOS.stream().forEach(imageDTO -> {
-            responseObjects.add(convertDTOtoResponse(imageDTO));
-
-        });
-
-        return responseObjects;
+        return convertDTOsToResponse(imageDTOS);
     }
 
     public ResponseObject getImage(Integer imageID) {
@@ -110,5 +103,31 @@ public class ImageService {
         }
 
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found");
+    }
+
+    public List<ResponseObject> getImageByObjects(List<String> imageObjects) {
+
+        List<ImageDTO> imageDTOS = new ArrayList<>();
+
+        imageObjects.stream().forEach(object -> {
+            imageDTOS.addAll(getImagesByObject(object));
+        });
+
+        return convertDTOsToResponse(imageDTOS);
+    }
+
+    private List<ImageDTO> getImagesByObject(String object)  {
+        return imageRepository.getImagesByObject(object);
+    }
+
+    private List<ResponseObject> convertDTOsToResponse(List <ImageDTO> imageDTOS) {
+        List<ResponseObject> responseObjects = new ArrayList<>();
+
+        imageDTOS.stream().forEach(imageDTO -> {
+            responseObjects.add(convertDTOtoResponse(imageDTO));
+
+        });
+
+        return responseObjects;
     }
 }
