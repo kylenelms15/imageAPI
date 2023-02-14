@@ -6,9 +6,11 @@ import com.example.imageAPI.model.RequestObject;
 import com.example.imageAPI.model.ResponseObject;
 import com.example.imageAPI.repository.ImageRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.validator.routines.UrlValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
+
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -23,6 +25,7 @@ public class ImageService {
     private final DetectLabels detectLabels;
 
     public ResponseObject submitImage(RequestObject request) {
+        validateRequestObject(request);
         ImageDTO imageDTO = convertToDTO(request);
         imageRepository.save(imageDTO);
 
@@ -30,10 +33,13 @@ public class ImageService {
     }
 
     public List<ResponseObject> getImageByObjects(List<String> imageObjects) {
-
         List<ImageDTO> imageDTOS = new ArrayList<>();
 
         imageObjects.stream().forEach(object -> {
+            if(StringUtils.isEmpty(object)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Object must be provided");
+            }
+
             String caseFixedObject = object.substring(0,1).toUpperCase() +
                     object.substring(1).toLowerCase();
 
@@ -70,15 +76,16 @@ public class ImageService {
 
         if(!StringUtils.isEmpty(request.getImage())) {
             byte[] decodedImageData = Base64.getDecoder().decode(request.getImage());
+
+            if(decodedImageData.length >= 100000) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image is too large");
+            }
+
             imageDTO.setImageData(decodedImageData);
         }
 
         if(request.getImageURI() != null && !request.getImageURI().isEmpty()) {
             imageDTO.setImageURI(request.getImageURI());
-        }
-
-        if(StringUtils.isEmpty(imageDTO.getImageURI()) && imageDTO.getImageData().length<=0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image or Imamage URI must be provided");
         }
 
         if(request.isDetectionEnabled()) {
@@ -88,7 +95,6 @@ public class ImageService {
                 } else {
                     imageDTO.setObjects(detectLabels.detectLabelsFromURI(imageDTO.getImageURI()));
                 }
-
             } catch (IOException e) {
                 throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error processing image");
             }
@@ -130,5 +136,29 @@ public class ImageService {
         });
 
         return responseObjects;
+    }
+
+    private void validateRequestObject(RequestObject request) {
+        if(StringUtils.isEmpty(request.getImageURI()) && StringUtils.isEmpty(request.getImage())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image or Image URI must be provided");
+        }
+
+        if(!StringUtils.isEmpty(request.getImageURI()) && !StringUtils.isEmpty(request.getImage())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only one of Image or Image URI can be provided");
+        }
+
+        if(!StringUtils.isEmpty(request.getImageURI()) && !isValidURL(request.getImageURI())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Image URI is not valid");
+        }
+    }
+
+    private boolean isValidURL(String url) {
+        String[] schemes = {"http","https"}; // DEFAULT schemes = "http", "https", "ftp"
+        UrlValidator urlValidator = new UrlValidator(schemes);
+        if (urlValidator.isValid(url)) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

@@ -57,8 +57,7 @@ public class DetectLabels {
 
             for (AnnotateImageResponse res : responses) {
                 if (res.hasError()) {
-                    System.out.format("Error: %s%n", res.getError().getMessage());
-                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Problem calling VisionAPI");
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, res.getError().getMessage());
                 }
 
                 // For full list of available annotations, see http://g.co/cloud/vision/docs

@@ -3,6 +3,7 @@ package com.example.imageAPI.controller;
 import com.example.imageAPI.model.RequestObject;
 import com.example.imageAPI.service.ImageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,7 +19,7 @@ public class ImageController {
     @PostMapping(path = "/images", consumes = "application/json;charset=UTF-8")
     public @ResponseBody ResponseEntity addImage(@RequestBody RequestObject request) {
 
-        return ResponseEntity.ok(imageService.submitImage(request));
+        return  new ResponseEntity (imageService.submitImage(request), HttpStatus.CREATED);
     }
 
     @GetMapping(path = "/images")
@@ -33,7 +34,7 @@ public class ImageController {
         return ResponseEntity.ok(imageService.getImage(imageID));
     }
 
-    @GetMapping(path="/images/")
+    @GetMapping(path="/images", params = "objects")
     public @ResponseBody ResponseEntity getImagesByObjects(@RequestParam List<String> objects) {
 
         return ResponseEntity.ok(imageService.getImageByObjects(objects));
