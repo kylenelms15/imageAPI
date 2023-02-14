@@ -3,7 +3,6 @@ package com.example.imageAPI.controller;
 import com.example.imageAPI.model.RequestObject;
 import com.example.imageAPI.service.ImageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

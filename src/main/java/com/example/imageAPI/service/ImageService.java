@@ -18,7 +18,6 @@ import java.util.*;
 @RequiredArgsConstructor
 public class ImageService {
 
-
     private final ImageRepository imageRepository;
 
     private final DetectLabels detectLabels;
@@ -28,6 +27,36 @@ public class ImageService {
         imageRepository.save(imageDTO);
 
         return convertDTOtoResponse(imageDTO);
+    }
+
+    public List<ResponseObject> getImageByObjects(List<String> imageObjects) {
+
+        List<ImageDTO> imageDTOS = new ArrayList<>();
+
+        imageObjects.stream().forEach(object -> {
+            String caseFixedObject = object.substring(0,1).toUpperCase() +
+                    object.substring(1).toLowerCase();
+
+            imageDTOS.addAll(getImagesByObject(caseFixedObject));
+        });
+
+        return convertDTOsToResponse(imageDTOS);
+    }
+
+    public List<ResponseObject> getAllImages() {
+        List<ImageDTO> imageDTOS = imageRepository.findAll();
+
+        return convertDTOsToResponse(imageDTOS);
+    }
+
+    public ResponseObject getImage(Integer imageID) {
+        Optional<ImageDTO> imageDTO = imageRepository.findById(imageID);
+
+        if(imageDTO.isPresent()) {
+            return convertDTOtoResponse(imageDTO.get());
+        }
+
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found");
     }
 
     private ImageDTO convertToDTO(RequestObject request) {
@@ -53,7 +82,6 @@ public class ImageService {
         }
 
         if(request.isDetectionEnabled()) {
-            //code for object detection
             try {
                 if (imageDTO.getImageData() != null){
                     imageDTO.setObjects(detectLabels.detectLabelsFromBytes(imageDTO.getImageData()));
@@ -62,7 +90,7 @@ public class ImageService {
                 }
 
             } catch (IOException e) {
-                //something latyer
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error processing image");
             }
         }
 
@@ -87,33 +115,6 @@ public class ImageService {
 
     private String generateLabel() {
         return UUID.randomUUID().toString();
-    }
-
-    public List<ResponseObject> getAllImages() {
-        List<ImageDTO> imageDTOS = imageRepository.findAll();
-
-        return convertDTOsToResponse(imageDTOS);
-    }
-
-    public ResponseObject getImage(Integer imageID) {
-        Optional<ImageDTO> imageDTO = imageRepository.findById(imageID);
-
-        if(imageDTO.isPresent()) {
-            return convertDTOtoResponse(imageDTO.get());
-        }
-
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Image not found");
-    }
-
-    public List<ResponseObject> getImageByObjects(List<String> imageObjects) {
-
-        List<ImageDTO> imageDTOS = new ArrayList<>();
-
-        imageObjects.stream().forEach(object -> {
-            imageDTOS.addAll(getImagesByObject(object));
-        });
-
-        return convertDTOsToResponse(imageDTOS);
     }
 
     private List<ImageDTO> getImagesByObject(String object)  {
